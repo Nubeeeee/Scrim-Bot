@@ -472,68 +472,14 @@ async def comands(ctx):
         )
     await ctx.send(msg)
 #----------------------------Plantilla----------------------
+
 @bot.command()
 async def template(ctx):
     await ctx.send("https://discord.new/e787WxPhQQfR")
 
-#---------------------------MSG comands--------------------- #Full coña comandos
-canal_dest = 1395862014177574956
-
 @bot.command()
-async def msgs(ctx, *, msgs: str = None):
-    canal_id = 1395862014177574956
-    canal = bot.get_channel(canal_id)
-
-    if canal is None:
-        await ctx.send("No channel found")
-        return
-
-    if msgs is None:
-        await ctx.send("Put a msg to send")
-        return
-    
-    await canal.send(msgs)
-
-@bot.command()
-async def msgg(ctx, *, msgg: str = None):
-    canal_id = 1395862014177574954
-    canal = bot.get_channel(canal_id)
-    nubeid = 323827010348515328
-
-    if ctx.author.id == nubeid:
-
-        if canal is None:
-            await ctx.send("No channel found")
-            return
-
-        if msgg is None:
-            await ctx.send("Put a msg to send")
-            return
-        
-        await canal.send(msgg)
-
-    else:
-        ctx.send("You dont have acccess to use this command")
-
-@bot.command()
-async def msgc(ctx, canal_id: int, *, msgc: str = None):
-
-    canal = bot.get_channel(canal_id)
-
-    if canal is None:
-        await ctx.send("No pude encontrar el canal. Revisa la ID.")
-        return
-
-    if msgc is None:
-        await ctx.send("Put a msg to send")
-        return
-
-    await canal.send(msgc)
-    await ctx.send(f"Msg send to: {canal.mention}")
-
-@bot.command()
-async def bug(ctx, *, bug: str = None):
-    canal_id = 1462561920350683228
+async def bug(ctx, *, bug: str = None): #Command to recive bug reports
+    canal_id = 1462561920350683228 #ID of the channel you want to recive the bug reports
     canal = bot.get_channel(canal_id)
 
     if canal is None:
