@@ -25,12 +25,13 @@ ROL_NOSE = "?"
 ROL_SI_EN = "Yes"
 ROL_NO = "No"
 mensaje_scrim_id = None
-
-#------Version-------
+#region                     CODIGO 
+#region                     VERSION
 @bot.command()
 async def version(ctx):
     await ctx.send(t("Version: 1.3.5"))
-#-----------------Idioma---------------- 
+#endregion
+#region                     IDIOMAS
 # Textos multi-idioma
 TEXTOS = {
     "es": {
@@ -64,6 +65,7 @@ TEXTOS = {
 }
 idiomas_servidor = {} 
 
+
 def load_languages():
     global idiomas_servidor
     if os.path.exists(lang_file):
@@ -78,7 +80,8 @@ def save_languages():
     with open(lang_file, "w", encoding="utf-8") as f:
         json.dump(idiomas_servidor, f, indent=4)
 
-#--------------------FUNCIONES-----------------------
+#endregion
+#region                     FUNCIONES
 def t(key, guild_id=None):
     lang = "en"
     if guild_id and guild_id in idiomas_servidor:
@@ -94,7 +97,8 @@ def get_rol_no(guild_id=None):
 def get_rol_nose(guild_id=None):
     return ROL_NOSE
 
-#--------------------EVENTOS-----------------------
+#endregion
+#region                     EVENTOS
 @bot.event
 async def on_ready():
     load_languages()
@@ -111,7 +115,8 @@ async def on_guild_join(guild):
         idiomas_servidor[guild.id] = "en"
         save_languages()
 
-#--------------------CREAR ROLES-----------------------
+#endregion
+#region                     CREAR ROLES
 @bot.command(name="rol")
 @commands.has_permissions(administrator=True)
 async def rol(ctx):
@@ -146,8 +151,8 @@ async def rol(ctx):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("Error: I don't have permission to do that.")
         return
-    
-#----------------mix-------------------
+#endregion
+#region                     MIX
 
 @bot.command()
 async def mix(ctx, *, mensaje_opcional: str = None):
@@ -203,8 +208,8 @@ async def on_raw_reaction_add(payload):
         await member.add_roles(rol_nose)
         await member.remove_roles(*[r for r in [rol_si, rol_no] if r in member.roles])
         print(f"Rol Nose asignado a {member}")
-
-#------------Scrim Hora-------------    
+#endregion
+#region                     SCRIM HORA
 @bot.command()
 async def hour(ctx):
 
@@ -223,10 +228,9 @@ async def hour(ctx):
 
     await msg.add_reaction("1️⃣")
     await msg.add_reaction("2️⃣")
-    
-#-----------Confirmacion de horas--------------
 
-#-----------------------------------
+#endregion    
+#region                     BORRAR ROLES
 
 @bot.command(name="roldel")
 @commands.has_permissions(administrator=True)
@@ -258,7 +262,8 @@ async def roldel(ctx):
         await ctx.send("Error: I don't have permission to do that.")
         return
 
-#--------------------COMPROBAR ROLES | SI y NO -----------------------
+#endregion
+#region                     COMPROBAR ROLES | SI y NO
 @bot.command(name="si")
 async def QuienSi(ctx):
     rol = get(ctx.guild.roles, name=get_rol_si(ctx.guild.id))
@@ -295,7 +300,8 @@ async def QuienNo(ctx):
     else:
         await ctx.send(f"rol no encontrado '{ROL_NO}'")
 
-#--------------------PING A LOS QUE DIJERON SI-----------------------
+#endregion
+#region                     PING A LOS QUE DIJERON SI
 @bot.command()
 async def start(ctx):
     rol = get(ctx.guild.roles, name=get_rol_si(ctx.guild.id))
@@ -304,8 +310,9 @@ async def start(ctx):
         await ctx.send(t("scrim_comienza", ctx.guild.id) + "\n" + "\n".join(lista))
     else:
         await ctx.send(t("nadie_si", ctx.guild.id))
-
-#--------------------SCRIM REACTIONS----------------------- #Para que el Bot reaccione al !scrim
+#endregion
+#region                     SCRIM REACTIONS
+# Para que el Bot reaccione al !scrim
 @bot.command()
 async def scrim(ctx, *, mensaje_opcional: str = None):
     """
@@ -373,8 +380,9 @@ async def on_raw_reaction_add(payload):
         await member.remove_roles(*[r for r in [rol_si, rol_no] if r in member.roles])
         print(f"Rol Nose asignado a {member}")
 
-#--------------------RESET ROLES-----------------------
-@bot.command()
+#endregion
+#region                     RESET ROLES
+@bot.command() #Reset de prueba para roles expecifico (No funciona correctamente)
 async def resett(ctx):
     guild = ctx.guild
 
@@ -424,7 +432,8 @@ async def reset(ctx):
         await member.remove_roles(rol_si, rol_no, rol_nose)
     await ctx.send(t("reseteando", ctx.guild.id))
 
-#--------------------INFO Y COMANDOS-----------------------
+#endregion
+#region                     INFO Y COMANDOS
 @bot.command()
 async def info(ctx):
     await ctx.send(t("info", ctx.guild.id))
@@ -471,15 +480,70 @@ async def comands(ctx):
             "Contact: nubee."
         )
     await ctx.send(msg)
-#----------------------------Plantilla----------------------
 
-@bot.command()
+#endregion
+#region                     PLANTILLA
+@bot.command() #Plantilla para servidor de equipo de discord (Puede estar desactualizada)
 async def template(ctx):
     await ctx.send("https://discord.new/e787WxPhQQfR")
 
+#endregion
+#region                     COMUNICADOS
 @bot.command()
-async def bug(ctx, *, bug: str = None): #Command to recive bug reports
-    canal_id = 1462561920350683228 #ID of the channel you want to recive the bug reports
+async def msgs(ctx, *, msgs: str = None):
+    canal_id = 1395862014177574956
+    canal = bot.get_channel(canal_id)
+
+    if canal is None:
+        await ctx.send("No channel found")
+        return
+
+    if msgs is None:
+        await ctx.send("Put a msg to send")
+        return
+    
+    await canal.send(msgs)
+
+@bot.command()
+async def msgg(ctx, *, msgg: str = None):
+    canal_id = 1395862014177574954
+    canal = bot.get_channel(canal_id)
+    nubeid = 323827010348515328
+
+    if ctx.author.id == nubeid:
+
+        if canal is None:
+            await ctx.send("No channel found")
+            return
+
+        if msgg is None:
+            await ctx.send("Put a msg to send")
+            return
+        
+        await canal.send(msgg)
+
+    else:
+        ctx.send("You dont have acccess to use this command")
+
+@bot.command()
+async def msgc(ctx, canal_id: int, *, msgc: str = None):
+
+    canal = bot.get_channel(canal_id)
+
+    if canal is None:
+        await ctx.send("No pude encontrar el canal. Revisa la ID.")
+        return
+
+    if msgc is None:
+        await ctx.send("Put a msg to send")
+        return
+
+    await canal.send(msgc)
+    await ctx.send(f"Msg send to: {canal.mention}")
+
+@bot.command()
+async def bug(ctx, *, bug: str = None):
+    canal_id = 1462561920350683228
     canal = bot.get_channel(canal_id)
 
     if canal is None:
@@ -492,10 +556,9 @@ async def bug(ctx, *, bug: str = None): #Command to recive bug reports
     
     await canal.send(bug)
     await ctx.send(f"Bug have been reported, TY ^^")
+#endregion
+#region                     CAMBIO DE IDIOMA
 
-# ---------------------------------------------------------------------------------------------------- FUNCIONES ----------------------------------------------------------------------------------------------------------------------
-
-#--------------------CAMBIO DE IDIOMA-----------------------
 @bot.command()
 async def setlang(ctx, idioma: str):
     idioma = idioma.lower()
@@ -508,4 +571,8 @@ async def setlang(ctx, idioma: str):
 
     await ctx.send(t("idioma_cambiado", ctx.guild.id))
 
-bot.run("Token")  
+#endregion
+#endregion
+#region TOKEN (Mantener oculto)
+bot.run("TOKEN")  
+#endregion
