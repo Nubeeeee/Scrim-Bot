@@ -15,6 +15,7 @@ intents.reactions = True
 intents.members = True
 
 lang_file = "lang.json"
+server_lucky_ids = [1395862013082865775, 1477072294110171256, 1514583484562145340]
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -25,7 +26,11 @@ ROL_SI_EN = "Yes"
 ROL_NO = "No"
 mensaje_scrim_id = None
 
-#-----------------Idioma----------------
+#------Version-------
+@bot.command()
+async def version(ctx):
+    await ctx.send(t("Version: 1.3.5"))
+#-----------------Idioma---------------- 
 # Textos multi-idioma
 TEXTOS = {
     "es": {
@@ -57,7 +62,6 @@ TEXTOS = {
         "rolrecuerdo": "Remember that the bot's role must have permission to change roles and must be above the players' roles, as well as the 'Yes', 'No', and '?' roles, to ensure proper functioning ^^"
     }
 }
-
 idiomas_servidor = {} 
 
 def load_languages():
@@ -69,7 +73,6 @@ def load_languages():
             idiomas_servidor = {int(k): v for k, v in idiomas_servidor.items()}
     else:
         idiomas_servidor = {}
-
 
 def save_languages():
     with open(lang_file, "w", encoding="utf-8") as f:
@@ -91,14 +94,14 @@ def get_rol_no(guild_id=None):
 def get_rol_nose(guild_id=None):
     return ROL_NOSE
 
-#--------------------EVENTS-----------------------
+#--------------------EVENTOS-----------------------
 @bot.event
 async def on_ready():
     load_languages()
-    print(f"Bot listo y conectado como {bot.user}")
+    print(f"Bot listo! Conectado como {bot.user}")
     try:
         synced = await bot.tree.sync()
-        print("Slash commands on")
+        print("Slash commands sincronizados")
     except Exception as e:
         print(e)
 
@@ -108,7 +111,7 @@ async def on_guild_join(guild):
         idiomas_servidor[guild.id] = "en"
         save_languages()
 
-#--------------------CREATE ROLES-----------------------
+#--------------------CREAR ROLES-----------------------
 @bot.command(name="rol")
 @commands.has_permissions(administrator=True)
 async def rol(ctx):
@@ -118,14 +121,15 @@ async def rol(ctx):
     rol_nose_nombre = ROL_NOSE                  
 
     try:
-   
+        # Crear roles
         rol_si = await guild.create_role(name=rol_si_nombre, colour=discord.Colour.green())
         rol_no = await guild.create_role(name=rol_no_nombre, colour=discord.Colour.red())
         rol_nose = await guild.create_role(name=rol_nose_nombre, colour=discord.Colour.yellow())
 
-
+        # Obtener el rol más alto del bot
         bot_rol = guild.me.top_role
 
+        # Mover los roles recién creados **justo debajo del bot**, en orden descendente
         
         await rol_si.edit(position=bot_rol.position - 1)
         await rol_nose.edit(position=bot_rol.position - 2)
@@ -143,6 +147,63 @@ async def rol(ctx):
         await ctx.send("Error: I don't have permission to do that.")
         return
     
+#----------------mix-------------------
+
+@bot.command()
+async def mix(ctx, *, mensaje_opcional: str = None):
+
+    embed = Embed(
+        title="",
+        description="Quereis mix hoy?",
+        color=discord.Color.blue()
+    )
+
+    mensaje = await ctx.send(embed=embed)
+
+    # Añadir reacciones
+    await mensaje.add_reaction("✅")
+    await mensaje.add_reaction("➖")
+    await mensaje.add_reaction("❌")
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    global mensaje_scrim_id
+    if payload.user_id == bot.user.id:
+        return
+    if mensaje_scrim_id is None or payload.message_id != mensaje_scrim_id:
+        return
+
+    guild = bot.get_guild(payload.guild_id)
+    if guild is None:
+        return
+    member = guild.get_member(payload.user_id)
+    if member is None:
+        return
+
+    rol_si = get(guild.roles, name=get_rol_si(guild.id))
+    rol_no = get(guild.roles, name=ROL_NO)
+    rol_nose = get(guild.roles, name=ROL_NOSE)
+
+    if rol_si is None or rol_no is None or rol_nose is None:
+        print(t("no_roles", guild.id))
+        return
+
+    if payload.emoji.name == "✅":
+        await member.add_roles(rol_si)
+        # Eliminar los otros dos roles si los tiene
+        await member.remove_roles(*[r for r in [rol_no, rol_nose] if r in member.roles])
+        print(f"Asignado rol SI a {member}")
+
+    elif payload.emoji.name == "❌":
+        await member.add_roles(rol_no)
+        await member.remove_roles(*[r for r in [rol_si, rol_nose] if r in member.roles])
+        print(f"Asignado rol NO a {member}")
+
+    elif payload.emoji.name == "➖":
+        await member.add_roles(rol_nose)
+        await member.remove_roles(*[r for r in [rol_si, rol_no] if r in member.roles])
+        print(f"Rol Nose asignado a {member}")
+
 #------------Scrim Hora-------------    
 @bot.command()
 async def hour(ctx):
@@ -162,7 +223,9 @@ async def hour(ctx):
 
     await msg.add_reaction("1️⃣")
     await msg.add_reaction("2️⃣")
-  
+    
+#-----------Confirmacion de horas--------------
+
 #-----------------------------------
 
 @bot.command(name="roldel")
@@ -170,6 +233,7 @@ async def hour(ctx):
 async def roldel(ctx):
     guild = ctx.guild
 
+    # Lista de todos los nombres de roles que quieres borrar
     roles_a_borrar = [
         ROL_SI_ES,
         ROL_SI_EN,
@@ -194,7 +258,7 @@ async def roldel(ctx):
         await ctx.send("Error: I don't have permission to do that.")
         return
 
-#--------------------ROLE-----------------------
+#--------------------COMPROBAR ROLES | SI y NO -----------------------
 @bot.command(name="si")
 async def QuienSi(ctx):
     rol = get(ctx.guild.roles, name=get_rol_si(ctx.guild.id))
@@ -231,7 +295,7 @@ async def QuienNo(ctx):
     else:
         await ctx.send(f"rol no encontrado '{ROL_NO}'")
 
-#--------------------PING FOR THE PEOPLE SAY YES-----------------------
+#--------------------PING A LOS QUE DIJERON SI-----------------------
 @bot.command()
 async def start(ctx):
     rol = get(ctx.guild.roles, name=get_rol_si(ctx.guild.id))
@@ -241,12 +305,17 @@ async def start(ctx):
     else:
         await ctx.send(t("nadie_si", ctx.guild.id))
 
-#--------------------SCRIM REACTIONS-----------------------
+#--------------------SCRIM REACTIONS----------------------- #Para que el Bot reaccione al !scrim
 @bot.command()
 async def scrim(ctx, *, mensaje_opcional: str = None):
-
+    """
+    Envía un embed para la scrim. 
+    Si se pasa texto después de !scrim, se usa ese mensaje.
+    Si no, usa el texto por defecto del idioma.
+    """
     global mensaje_scrim_id
 
+    # Usar texto por defecto si no se pasa ninguno
     if mensaje_opcional is None:
         mensaje_opcional = t("scrim_pregunta", ctx.guild.id)
 
@@ -258,12 +327,12 @@ async def scrim(ctx, *, mensaje_opcional: str = None):
 
     mensaje = await ctx.send(embed=embed)
 
+    # Añadir reacciones
     await mensaje.add_reaction("✅")
     await mensaje.add_reaction("➖")
     await mensaje.add_reaction("❌")
 
     mensaje_scrim_id = mensaje.id
-
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -355,7 +424,7 @@ async def reset(ctx):
         await member.remove_roles(rol_si, rol_no, rol_nose)
     await ctx.send(t("reseteando", ctx.guild.id))
 
-#--------------------INFO and Commands-----------------------
+#--------------------INFO Y COMANDOS-----------------------
 @bot.command()
 async def info(ctx):
     await ctx.send(t("info", ctx.guild.id))
@@ -399,7 +468,7 @@ async def comands(ctx):
             "**Para usarlo en español:** !setlang es"
             "\n"
             "For any type of error: \n" 
-            "Contact: number."
+            "Contact: nubee."
         )
     await ctx.send(msg)
 #----------------------------Plantilla----------------------
@@ -407,9 +476,60 @@ async def comands(ctx):
 async def template(ctx):
     await ctx.send("https://discord.new/e787WxPhQQfR")
 
-#Just a template for a discord...
+#---------------------------MSG comands--------------------- #Full coña comandos
+canal_dest = 1395862014177574956
 
-#---------------------------MSG comands---------------------
+@bot.command()
+async def msgs(ctx, *, msgs: str = None):
+    canal_id = 1395862014177574956
+    canal = bot.get_channel(canal_id)
+
+    if canal is None:
+        await ctx.send("No channel found")
+        return
+
+    if msgs is None:
+        await ctx.send("Put a msg to send")
+        return
+    
+    await canal.send(msgs)
+
+@bot.command()
+async def msgg(ctx, *, msgg: str = None):
+    canal_id = 1395862014177574954
+    canal = bot.get_channel(canal_id)
+    nubeid = 323827010348515328
+
+    if ctx.author.id == nubeid:
+
+        if canal is None:
+            await ctx.send("No channel found")
+            return
+
+        if msgg is None:
+            await ctx.send("Put a msg to send")
+            return
+        
+        await canal.send(msgg)
+
+    else:
+        ctx.send("You dont have acccess to use this command")
+
+@bot.command()
+async def msgc(ctx, canal_id: int, *, msgc: str = None):
+
+    canal = bot.get_channel(canal_id)
+
+    if canal is None:
+        await ctx.send("No pude encontrar el canal. Revisa la ID.")
+        return
+
+    if msgc is None:
+        await ctx.send("Put a msg to send")
+        return
+
+    await canal.send(msgc)
+    await ctx.send(f"Msg send to: {canal.mention}")
 
 @bot.command()
 async def bug(ctx, *, bug: str = None):
@@ -427,8 +547,9 @@ async def bug(ctx, *, bug: str = None):
     await canal.send(bug)
     await ctx.send(f"Bug have been reported, TY ^^")
 
+# ---------------------------------------------------------------------------------------------------- FUNCIONES ----------------------------------------------------------------------------------------------------------------------
 
-#--------------------language-----------------------
+#--------------------CAMBIO DE IDIOMA-----------------------
 @bot.command()
 async def setlang(ctx, idioma: str):
     idioma = idioma.lower()
@@ -441,5 +562,4 @@ async def setlang(ctx, idioma: str):
 
     await ctx.send(t("idioma_cambiado", ctx.guild.id))
 
-
-bot.run("TOKEN")  
+bot.run("Token")  
